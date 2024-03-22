@@ -1,10 +1,11 @@
 package main
 
 import (
+	"log"
+
 	"github.com/Svoevolin/workshop_1_bot/internal/clients/tg"
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
-	"log"
 )
 
 func main() {

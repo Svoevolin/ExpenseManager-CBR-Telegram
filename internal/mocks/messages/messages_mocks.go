@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	orderedmap "github.com/wk8/go-ordered-map"
 )
 
 // MockMessageSender is a mock of MessageSender interface.
@@ -31,6 +32,20 @@ func NewMockMessageSender(ctrl *gomock.Controller) *MockMessageSender {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockMessageSender) EXPECT() *MockMessageSenderMockRecorder {
 	return m.recorder
+}
+
+// SendInlineMenu mocks base method.
+func (m *MockMessageSender) SendInlineMenu(text string, userID int64, buttons *orderedmap.OrderedMap) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendInlineMenu", text, userID, buttons)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendInlineMenu indicates an expected call of SendInlineMenu.
+func (mr *MockMessageSenderMockRecorder) SendInlineMenu(text, userID, buttons interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendInlineMenu", reflect.TypeOf((*MockMessageSender)(nil).SendInlineMenu), text, userID, buttons)
 }
 
 // SendMessage mocks base method.
