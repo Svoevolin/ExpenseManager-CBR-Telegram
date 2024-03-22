@@ -1,8 +1,9 @@
 package messages
 
 import (
-	orderedmap "github.com/wk8/go-ordered-map"
 	"strings"
+
+	orderedmap "github.com/wk8/go-ordered-map"
 )
 
 type MessageSender interface {
