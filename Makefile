@@ -20,7 +20,7 @@ run:
 
 generate: install-mockgen
 	${MOCKGEN} \
-		-source=internal/model/messages/incoming_msg.go \
+		-source=internal/model/messages/incoming.go \
 		-destination=internal/mocks/messages/messages_mocks.go
 
 lint: install-lint
