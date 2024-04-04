@@ -1,9 +1,8 @@
 CURDIR=$(shell pwd)
 BINDIR=${CURDIR}/bin
 GOVER=$(shell go version | perl -nle '/(go\d\S+)/; print $$1;')
-MOCKGEN=${BINDIR}/mockgen_${GOVER}
 SMARTIMPORTS=${BINDIR}/smartimports_${GOVER}
-LINTVER=v1.53.0
+LINTVER=v1.52.0
 LINTBIN=${BINDIR}/lint_${GOVER}_${LINTVER}
 PACKAGE=github.com/Svoevolin/workshop_1_bot/cmd/bot
 
@@ -18,11 +17,6 @@ test:
 run:
 	go run ${PACKAGE}
 
-generate: install-mockgen
-	${MOCKGEN} \
-		-source=internal/model/messages/incoming.go \
-		-destination=internal/mocks/messages/messages_mocks.go
-
 lint: install-lint
 	${LINTBIN} run
 
@@ -34,11 +28,6 @@ bindir:
 
 format: install-smartimports
 	${SMARTIMPORTS} -exclude internal/mocks
-
-install-mockgen: bindir
-	test -f ${MOCKGEN} || \
-		(GOBIN=${BINDIR} go install github.com/golang/mock/mockgen@v1.6.0 && \
-		mv ${BINDIR}/mockgen ${MOCKGEN})
 
 install-lint: bindir
 	test -f ${LINTBIN} || \
