@@ -1,1 +1,9 @@
-token:
+# should be ./data/config.yaml
+token: abc
+currency_settings:
+  base_currency: RUB
+  supported_codes:
+    - USD
+    - CNY
+    - EUR
+  frequency_exchange_rate_updates: 123

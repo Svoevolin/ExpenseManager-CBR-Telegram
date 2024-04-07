@@ -2,38 +2,43 @@ package messages
 
 import (
 	"context"
+	"strings"
+
+	"github.com/pkg/errors"
 )
 
-type MessageSender interface {
-	SendMessage(text string, userID int64, keyboardRows ...map[string]string) error
-}
-
-type Model struct {
-	tgClient MessageSender
-}
-
-func New(tgClient MessageSender) *Model {
-	return &Model{
-		tgClient: tgClient,
-	}
-}
-
-type Message struct {
-	Text   string
-	UserID int64
-}
-
-type CallBack struct {
-	UserID    int64
-	MessageID int
-	Data      string
-}
-
 func (s *Model) IncomingMessage(ctx context.Context, msg Message) error {
-	switch msg.Text {
-	case "/start":
-		return s.tgClient.SendMessage("Hello", msg.UserID)
-	default:
-		return s.tgClient.SendMessage("Не знаю эту команду", msg.UserID)
+
+	switch {
+	case !s.userDB.UserExists(ctx, msg.UserID) && !strings.HasPrefix(msg.Text, "/set_currency"):
+
+		_, buttons := s.changeDefaultCurrency()
+		return s.tgClient.SendMessage(newUserMessage, msg.UserID, buttons...)
+
+	case msg.Text == "/start":
+
+		return s.tgClient.SendMessage(startMessage, msg.UserID)
+
+	case strings.HasPrefix(msg.Text, "/set_currency"):
+
+		answer, err := s.setCurrency(ctx, msg)
+		if err == nil {
+			return s.tgClient.SendMessage(answer, msg.UserID)
+		}
+
+		if errors.Is(err, ErrImpossibleToChangeUserCurrency) {
+			return s.tgClient.SendMessage(FailedChangeCurrencyMessage, msg.UserID)
+		}
+
+		//fallback error
+		return s.tgClient.SendMessage(FailedMessage, msg.UserID)
+
+	case strings.HasPrefix(msg.Text, "/change_currency"):
+
+		answer, buttons := s.changeDefaultCurrency()
+		return s.tgClient.SendMessage(answer, msg.UserID, buttons...)
+
 	}
+
+	return s.tgClient.SendMessage(unknownMessage, msg.UserID)
 }

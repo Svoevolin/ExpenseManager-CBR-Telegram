@@ -23,6 +23,9 @@ lint: install-lint
 precommit: format build test lint
 	echo "OK"
 
+generate:
+	cd ${CURDIR}/internal/model/messages/ && minimock -o ${CURDIR}/internal/mocks/messages/ -s "_mock.go"
+
 bindir:
 	mkdir -p ${BINDIR}
 

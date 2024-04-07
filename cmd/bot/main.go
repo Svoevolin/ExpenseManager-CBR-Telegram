@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
+	"github.com/Svoevolin/workshop_1_bot/internal/database"
 	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/tg_gateaway"
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
 	"github.com/Svoevolin/workshop_1_bot/internal/worker"
@@ -26,7 +27,12 @@ func main() {
 		log.Fatal("tg client init failed:", err)
 	}
 
-	messageProcessor := messages.New(tgAPIgateaway)
+	userDB, err := database.NewUserDB()
+	if err != nil {
+		log.Fatal("database init failed", err)
+	}
+
+	messageProcessor := messages.New(tgAPIgateaway, config, userDB)
 	messageListenerWorker := worker.NewMessageListenerWorker(tgAPIgateaway, messageProcessor)
 	messageListenerWorker.Run(ctx)
 }
