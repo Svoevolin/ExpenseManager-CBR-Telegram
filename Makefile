@@ -2,7 +2,9 @@ CURDIR=$(shell pwd)
 BINDIR=${CURDIR}/bin
 GOVER=$(shell go version | perl -nle '/(go\d\S+)/; print $$1;')
 SMARTIMPORTS=${BINDIR}/smartimports_${GOVER}
+MOCKVER=v3.3.6
 LINTVER=v1.52.0
+MOCKBIN=${BINDIR}/minimock_${GOVER}_${MOCKVER}
 LINTBIN=${BINDIR}/lint_${GOVER}_${LINTVER}
 PACKAGE=github.com/Svoevolin/workshop_1_bot/cmd/bot
 
@@ -23,8 +25,13 @@ lint: install-lint
 precommit: format build test lint
 	echo "OK"
 
-generate:
-	cd ${CURDIR}/internal/model/messages/ && minimock -o ${CURDIR}/internal/mocks/messages/ -s "_mock.go"
+generate: install-minimock
+	cd ${CURDIR}/internal/model/messages/ && ${MOCKBIN} -o ${CURDIR}/internal/mocks/messages/ -s "_mock.go"
+
+install-minimock: bindir
+	test -f ${MOCKBIN} || \
+		(GOBIN=${BINDIR} go install github.com/gojuno/minimock/v3/cmd/minimock@${MOCKVER} && \
+		mv ${BINDIR}/minimock ${MOCKBIN})
 
 bindir:
 	mkdir -p ${BINDIR}
