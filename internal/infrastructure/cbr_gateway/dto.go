@@ -1,4 +1,4 @@
-package cbr_gateaway
+package cbr_gateway
 
 type Rates struct {
 	Currencies []*Valute `xml:"Valute"`
