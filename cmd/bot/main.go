@@ -24,6 +24,8 @@ func main() {
 		log.Fatal("config init failed:", err)
 	}
 
+	// DATABASE
+
 	userDB, err := database.NewUserDB()
 	if err != nil {
 		log.Fatal("database init failed", err)
@@ -39,15 +41,23 @@ func main() {
 		log.Fatal("database init failed", err)
 	}
 
+	// GATEWAY
+
 	cbrRateAPIGateway := cbr_gateway.New()
 	tgAPIgateaway, err := tg_gateway.New(config)
 	if err != nil {
 		log.Fatal("tg client init failed:", err)
 	}
 
+	// SERVICES
+
 	exchangeRateUpdateSvc := services.NewExchangeRateUpdateSvc(cbrRateAPIGateway, rateDB, config)
 
+	// COMMANDS
+
 	messageProcessor := messages.New(tgAPIgateaway, config, userDB, rateDB, expenseDB, exchangeRateUpdateSvc)
+
+	// WORKERS
 
 	currencyExchangeRateWorker := worker.NewCurrencyExchangeRateWorker(exchangeRateUpdateSvc, config)
 	messageListenerWorker := worker.NewMessageListenerWorker(tgAPIgateaway, messageProcessor)
