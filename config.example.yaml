@@ -6,4 +6,5 @@ currency_settings:
     - USD
     - CNY
     - EUR
-  frequency_exchange_rate_updates: 123
+  frequency_exchange_rate_updates: 10
+  

@@ -15,7 +15,7 @@ func TestModelSetCurrency(t *testing.T) {
 	settings := mock.NewConfigGetterMock(m)
 	userDB := mock.NewUserDBMock(m)
 	sender := mock.NewMessageSenderMock(m)
-	model := New(sender, settings, userDB)
+	model := New(sender, settings, userDB, nil, nil, nil)
 
 	t.Run("return error if currency code unsupported", func(t *testing.T) {
 		settings.SupportedCurrencyCodesMock.Expect().Return([]string{"RUB", "EUR"})
@@ -61,7 +61,7 @@ func TestChangeDefaultCurrency(t *testing.T) {
 	settings := mock.NewConfigGetterMock(m)
 	userDB := mock.NewUserDBMock(m)
 	sender := mock.NewMessageSenderMock(m)
-	model := New(sender, settings, userDB)
+	model := New(sender, settings, userDB, nil, nil, nil)
 
 	t.Run("return command for changing  default currency", func(t *testing.T) {
 		settings.SupportedCurrencyCodesMock.Expect().Return([]string{"RUB", "USD", "EUR"})

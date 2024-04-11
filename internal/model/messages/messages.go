@@ -3,7 +3,12 @@ package messages
 import (
 	"context"
 	"errors"
+	"time"
+
+	"github.com/Svoevolin/workshop_1_bot/internal/domain"
 )
+
+const dateFormat = "02.01.2006"
 
 const (
 	newUserMessage = `Привет, я бот - менеджер твоей бухгалтерии. Мне нужно знать валюту которой ты платишь`
@@ -22,10 +27,19 @@ const (
 
 	FailedMessage               = "Я временно не работаю, повторите попытку позже"
 	FailedChangeCurrencyMessage = "Не удалось изменить текущую валюту, повторите попытку позже"
+	InvalidCommandMessage       = "Неверный формат команды, исправьте и повторите команду"
+	InvalidAmountMessage        = "Неверный формат суммы, исправьте и повторите команду"
+	InvalidDateMessage          = "Неверный формат даты, исправьте и повторите команду"
+	FailedWriteMessage          = "Не удалось записать расход, повторите попытку позже"
 )
 
 var (
 	ErrImpossibleToChangeUserCurrency = errors.New("failed to change user currency")
+	ErrInvalidCommand                 = errors.New("invalid command")
+	ErrInvalidAmount                  = errors.New("invalid amount")
+	ErrInvalidDate                    = errors.New("invalid date")
+	ErrWriteToDatabase                = errors.New("failed to write to the database")
+	ErrGetRecordsInDatabase           = errors.New("failed to get records from the database")
 )
 
 type MessageSender interface {
@@ -43,17 +57,36 @@ type UserDB interface {
 	GetDefaultCurrency(ctx context.Context, userID int64) (string, error)
 }
 
-type Model struct {
-	tgClient MessageSender
-	config   ConfigGetter
-	userDB   UserDB
+type RateDB interface {
+	GetRate(ctx context.Context, code string, date time.Time) *domain.Rate
 }
 
-func New(tgClient MessageSender, config ConfigGetter, userDB UserDB) *Model {
+type ExpenseDB interface {
+	AddExpense(ctx context.Context, userID int64, kopecks int64, title string, date time.Time) error
+	GetExpenses(ctx context.Context, userID int64) ([]domain.Expense, error)
+}
+
+type ExchangeRateUpdate interface {
+	UpdateCurrency(ctx context.Context, time time.Time) error
+}
+
+type Model struct {
+	tgClient    MessageSender
+	config      ConfigGetter
+	userDB      UserDB
+	rateDB      RateDB
+	expenseDB   ExpenseDB
+	rateUpdater ExchangeRateUpdate
+}
+
+func New(tgClient MessageSender, config ConfigGetter, userDB UserDB, rateDB RateDB, expenseDB ExpenseDB, rateUpdater ExchangeRateUpdate) *Model {
 	return &Model{
-		tgClient: tgClient,
-		config:   config,
-		userDB:   userDB,
+		tgClient:    tgClient,
+		config:      config,
+		userDB:      userDB,
+		rateDB:      rateDB,
+		expenseDB:   expenseDB,
+		rateUpdater: rateUpdater,
 	}
 }
 

@@ -8,8 +8,10 @@ import (
 
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
 	"github.com/Svoevolin/workshop_1_bot/internal/database"
-	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/tg_gateaway"
+	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/cbr_gateway"
+	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/tg_gateway"
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
+	"github.com/Svoevolin/workshop_1_bot/internal/services"
 	"github.com/Svoevolin/workshop_1_bot/internal/worker"
 )
 
@@ -22,17 +24,34 @@ func main() {
 		log.Fatal("config init failed:", err)
 	}
 
-	tgAPIgateaway, err := tg_gateaway.New(config)
-	if err != nil {
-		log.Fatal("tg client init failed:", err)
-	}
-
 	userDB, err := database.NewUserDB()
 	if err != nil {
 		log.Fatal("database init failed", err)
 	}
 
-	messageProcessor := messages.New(tgAPIgateaway, config, userDB)
+	rateDB, err := database.NewRateDB()
+	if err != nil {
+		log.Fatal("database init failed", err)
+	}
+
+	expenseDB, err := database.NewExpenseDB()
+	if err != nil {
+		log.Fatal("database init failed", err)
+	}
+
+	cbrRateAPIGateway := cbr_gateway.New()
+	tgAPIgateaway, err := tg_gateway.New(config)
+	if err != nil {
+		log.Fatal("tg client init failed:", err)
+	}
+
+	exchangeRateUpdateSvc := services.NewExchangeRateUpdateSvc(cbrRateAPIGateway, rateDB, config)
+
+	messageProcessor := messages.New(tgAPIgateaway, config, userDB, rateDB, expenseDB, exchangeRateUpdateSvc)
+
+	currencyExchangeRateWorker := worker.NewCurrencyExchangeRateWorker(exchangeRateUpdateSvc, config)
 	messageListenerWorker := worker.NewMessageListenerWorker(tgAPIgateaway, messageProcessor)
+
+	currencyExchangeRateWorker.Run(ctx)
 	messageListenerWorker.Run(ctx)
 }
