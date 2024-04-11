@@ -59,3 +59,8 @@ func (c *Client) Start() tgbotapi.UpdatesChannel {
 func (c *Client) Stop() {
 	c.client.StopReceivingUpdates()
 }
+
+func (c *Client) Request(callback tgbotapi.CallbackConfig) error {
+	_, err := c.client.Request(callback)
+	return err
+}

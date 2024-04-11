@@ -10,6 +10,7 @@ import (
 
 type MessageFetcher interface {
 	Start() tgbotapi.UpdatesChannel
+	Request(callback tgbotapi.CallbackConfig) error
 	Stop()
 }
 
@@ -44,6 +45,11 @@ func (worker *MessageListenerWorker) processing(ctx context.Context, update tgbo
 	} else if update.CallbackQuery != nil {
 		log.Printf("<callback>[%s][%d] %s", update.CallbackQuery.From.UserName,
 			update.CallbackQuery.From.ID, update.CallbackQuery.Data)
+
+		callback := tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data)
+		if err := worker.fetcher.Request(callback); err != nil {
+			log.Println("error processing callback:", err)
+		}
 
 		err := worker.processor.IncomingMessage(ctx, messages.Message{
 			Text:   update.CallbackQuery.Data,
