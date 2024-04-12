@@ -40,6 +40,15 @@ func Test_OnAddCommand_ShouldAnswerWithAddedMessage(t *testing.T) {
 			answer:  "Расход добавлен: 100.00 RUB расход 11.04.2024",
 		},
 		{
+			name:    "with split for ';' give a len 4",
+			amount:  "100.0",
+			kopecks: 10000,
+			title:   "расход",
+			date:    parseDate("11.04.2024"),
+			command: "/add 100.0; расход; 11.04.2024;",
+			answer:  "Расход добавлен: 100.00 RUB расход 11.04.2024",
+		},
+		{
 			name:    "without title",
 			amount:  "100.0",
 			kopecks: 10000,

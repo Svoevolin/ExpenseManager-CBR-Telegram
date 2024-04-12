@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	utils "github.com/Svoevolin/workshop_1_bot/internal/helpers/date"
 	"github.com/Svoevolin/workshop_1_bot/internal/helpers/money"
 )
 
@@ -33,7 +34,7 @@ func (s *Model) addExpense(ctx context.Context, msg Message) (string, error) {
 		return "", ErrInvalidAmount
 	}
 
-	if len(parts) == 3 && strings.TrimSpace(parts[2]) != "" {
+	if (len(parts) == 3 || len(parts) == 4 && parts[3] == "") && strings.TrimSpace(parts[2]) != "" {
 		date, err = time.ParseInLocation(dateFormat, strings.ReplaceAll(parts[2], " ", ""), time.UTC)
 		if err != nil {
 			log.Printf("[%d]: %s", msg.UserID, err.Error())
@@ -47,14 +48,14 @@ func (s *Model) addExpense(ctx context.Context, msg Message) (string, error) {
 	}
 
 	if userSelectedCurrency != s.config.GetBaseCurrency() {
-		rate := s.rateDB.GetRate(ctx, userSelectedCurrency, date)
+		rate := s.rateDB.GetRate(ctx, userSelectedCurrency, utils.GetDate(date))
 
 		if rate == nil {
 			if err := s.rateUpdater.UpdateCurrency(ctx, date); err != nil {
 				return "", err
 			}
 
-			rate = s.rateDB.GetRate(ctx, userSelectedCurrency, date)
+			rate = s.rateDB.GetRate(ctx, userSelectedCurrency, utils.GetDate(date))
 		}
 
 		kopecks = int64(float64(kopecks) * float64(rate.Kopecks) / float64(100) / float64(rate.Nominal))
