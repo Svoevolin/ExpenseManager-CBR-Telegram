@@ -8,7 +8,6 @@ import (
 	"context"
 	"sync"
 	mm_atomic "sync/atomic"
-	"time"
 	mm_time "time"
 
 	"github.com/Svoevolin/workshop_1_bot/internal/domain"
@@ -20,8 +19,8 @@ type RateStorageMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcAddRate          func(ctx context.Context, date time.Time, rate domain.Rate) (err error)
-	inspectFuncAddRate   func(ctx context.Context, date time.Time, rate domain.Rate)
+	funcAddRate          func(ctx context.Context, rate domain.Rate) (err error)
+	inspectFuncAddRate   func(ctx context.Context, rate domain.Rate)
 	afterAddRateCounter  uint64
 	beforeAddRateCounter uint64
 	AddRateMock          mRateStorageMockAddRate
@@ -63,7 +62,6 @@ type RateStorageMockAddRateExpectation struct {
 // RateStorageMockAddRateParams contains parameters of the RateStorage.AddRate
 type RateStorageMockAddRateParams struct {
 	ctx  context.Context
-	date time.Time
 	rate domain.Rate
 }
 
@@ -73,7 +71,7 @@ type RateStorageMockAddRateResults struct {
 }
 
 // Expect sets up expected params for RateStorage.AddRate
-func (mmAddRate *mRateStorageMockAddRate) Expect(ctx context.Context, date time.Time, rate domain.Rate) *mRateStorageMockAddRate {
+func (mmAddRate *mRateStorageMockAddRate) Expect(ctx context.Context, rate domain.Rate) *mRateStorageMockAddRate {
 	if mmAddRate.mock.funcAddRate != nil {
 		mmAddRate.mock.t.Fatalf("RateStorageMock.AddRate mock is already set by Set")
 	}
@@ -82,7 +80,7 @@ func (mmAddRate *mRateStorageMockAddRate) Expect(ctx context.Context, date time.
 		mmAddRate.defaultExpectation = &RateStorageMockAddRateExpectation{}
 	}
 
-	mmAddRate.defaultExpectation.params = &RateStorageMockAddRateParams{ctx, date, rate}
+	mmAddRate.defaultExpectation.params = &RateStorageMockAddRateParams{ctx, rate}
 	for _, e := range mmAddRate.expectations {
 		if minimock.Equal(e.params, mmAddRate.defaultExpectation.params) {
 			mmAddRate.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmAddRate.defaultExpectation.params)
@@ -93,7 +91,7 @@ func (mmAddRate *mRateStorageMockAddRate) Expect(ctx context.Context, date time.
 }
 
 // Inspect accepts an inspector function that has same arguments as the RateStorage.AddRate
-func (mmAddRate *mRateStorageMockAddRate) Inspect(f func(ctx context.Context, date time.Time, rate domain.Rate)) *mRateStorageMockAddRate {
+func (mmAddRate *mRateStorageMockAddRate) Inspect(f func(ctx context.Context, rate domain.Rate)) *mRateStorageMockAddRate {
 	if mmAddRate.mock.inspectFuncAddRate != nil {
 		mmAddRate.mock.t.Fatalf("Inspect function is already set for RateStorageMock.AddRate")
 	}
@@ -117,7 +115,7 @@ func (mmAddRate *mRateStorageMockAddRate) Return(err error) *RateStorageMock {
 }
 
 // Set uses given function f to mock the RateStorage.AddRate method
-func (mmAddRate *mRateStorageMockAddRate) Set(f func(ctx context.Context, date time.Time, rate domain.Rate) (err error)) *RateStorageMock {
+func (mmAddRate *mRateStorageMockAddRate) Set(f func(ctx context.Context, rate domain.Rate) (err error)) *RateStorageMock {
 	if mmAddRate.defaultExpectation != nil {
 		mmAddRate.mock.t.Fatalf("Default expectation is already set for the RateStorage.AddRate method")
 	}
@@ -132,14 +130,14 @@ func (mmAddRate *mRateStorageMockAddRate) Set(f func(ctx context.Context, date t
 
 // When sets expectation for the RateStorage.AddRate which will trigger the result defined by the following
 // Then helper
-func (mmAddRate *mRateStorageMockAddRate) When(ctx context.Context, date time.Time, rate domain.Rate) *RateStorageMockAddRateExpectation {
+func (mmAddRate *mRateStorageMockAddRate) When(ctx context.Context, rate domain.Rate) *RateStorageMockAddRateExpectation {
 	if mmAddRate.mock.funcAddRate != nil {
 		mmAddRate.mock.t.Fatalf("RateStorageMock.AddRate mock is already set by Set")
 	}
 
 	expectation := &RateStorageMockAddRateExpectation{
 		mock:   mmAddRate.mock,
-		params: &RateStorageMockAddRateParams{ctx, date, rate},
+		params: &RateStorageMockAddRateParams{ctx, rate},
 	}
 	mmAddRate.expectations = append(mmAddRate.expectations, expectation)
 	return expectation
@@ -152,15 +150,15 @@ func (e *RateStorageMockAddRateExpectation) Then(err error) *RateStorageMock {
 }
 
 // AddRate implements services.RateStorage
-func (mmAddRate *RateStorageMock) AddRate(ctx context.Context, date time.Time, rate domain.Rate) (err error) {
+func (mmAddRate *RateStorageMock) AddRate(ctx context.Context, rate domain.Rate) (err error) {
 	mm_atomic.AddUint64(&mmAddRate.beforeAddRateCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddRate.afterAddRateCounter, 1)
 
 	if mmAddRate.inspectFuncAddRate != nil {
-		mmAddRate.inspectFuncAddRate(ctx, date, rate)
+		mmAddRate.inspectFuncAddRate(ctx, rate)
 	}
 
-	mm_params := RateStorageMockAddRateParams{ctx, date, rate}
+	mm_params := RateStorageMockAddRateParams{ctx, rate}
 
 	// Record call args
 	mmAddRate.AddRateMock.mutex.Lock()
@@ -177,7 +175,7 @@ func (mmAddRate *RateStorageMock) AddRate(ctx context.Context, date time.Time, r
 	if mmAddRate.AddRateMock.defaultExpectation != nil {
 		mm_atomic.AddUint64(&mmAddRate.AddRateMock.defaultExpectation.Counter, 1)
 		mm_want := mmAddRate.AddRateMock.defaultExpectation.params
-		mm_got := RateStorageMockAddRateParams{ctx, date, rate}
+		mm_got := RateStorageMockAddRateParams{ctx, rate}
 		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
 			mmAddRate.t.Errorf("RateStorageMock.AddRate got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
 		}
@@ -189,9 +187,9 @@ func (mmAddRate *RateStorageMock) AddRate(ctx context.Context, date time.Time, r
 		return (*mm_results).err
 	}
 	if mmAddRate.funcAddRate != nil {
-		return mmAddRate.funcAddRate(ctx, date, rate)
+		return mmAddRate.funcAddRate(ctx, rate)
 	}
-	mmAddRate.t.Fatalf("Unexpected call to RateStorageMock.AddRate. %v %v %v", ctx, date, rate)
+	mmAddRate.t.Fatalf("Unexpected call to RateStorageMock.AddRate. %v %v", ctx, rate)
 	return
 }
 

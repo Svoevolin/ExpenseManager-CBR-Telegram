@@ -18,6 +18,12 @@ type MessageFetcherMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
+	funcRequest          func(callback tgbotapi.CallbackConfig) (err error)
+	inspectFuncRequest   func(callback tgbotapi.CallbackConfig)
+	afterRequestCounter  uint64
+	beforeRequestCounter uint64
+	RequestMock          mMessageFetcherMockRequest
+
 	funcStart          func() (u1 tgbotapi.UpdatesChannel)
 	inspectFuncStart   func()
 	afterStartCounter  uint64
@@ -39,6 +45,9 @@ func NewMessageFetcherMock(t minimock.Tester) *MessageFetcherMock {
 		controller.RegisterMocker(m)
 	}
 
+	m.RequestMock = mMessageFetcherMockRequest{mock: m}
+	m.RequestMock.callArgs = []*MessageFetcherMockRequestParams{}
+
 	m.StartMock = mMessageFetcherMockStart{mock: m}
 
 	m.StopMock = mMessageFetcherMockStop{mock: m}
@@ -46,6 +55,221 @@ func NewMessageFetcherMock(t minimock.Tester) *MessageFetcherMock {
 	t.Cleanup(m.MinimockFinish)
 
 	return m
+}
+
+type mMessageFetcherMockRequest struct {
+	mock               *MessageFetcherMock
+	defaultExpectation *MessageFetcherMockRequestExpectation
+	expectations       []*MessageFetcherMockRequestExpectation
+
+	callArgs []*MessageFetcherMockRequestParams
+	mutex    sync.RWMutex
+}
+
+// MessageFetcherMockRequestExpectation specifies expectation struct of the MessageFetcher.Request
+type MessageFetcherMockRequestExpectation struct {
+	mock    *MessageFetcherMock
+	params  *MessageFetcherMockRequestParams
+	results *MessageFetcherMockRequestResults
+	Counter uint64
+}
+
+// MessageFetcherMockRequestParams contains parameters of the MessageFetcher.Request
+type MessageFetcherMockRequestParams struct {
+	callback tgbotapi.CallbackConfig
+}
+
+// MessageFetcherMockRequestResults contains results of the MessageFetcher.Request
+type MessageFetcherMockRequestResults struct {
+	err error
+}
+
+// Expect sets up expected params for MessageFetcher.Request
+func (mmRequest *mMessageFetcherMockRequest) Expect(callback tgbotapi.CallbackConfig) *mMessageFetcherMockRequest {
+	if mmRequest.mock.funcRequest != nil {
+		mmRequest.mock.t.Fatalf("MessageFetcherMock.Request mock is already set by Set")
+	}
+
+	if mmRequest.defaultExpectation == nil {
+		mmRequest.defaultExpectation = &MessageFetcherMockRequestExpectation{}
+	}
+
+	mmRequest.defaultExpectation.params = &MessageFetcherMockRequestParams{callback}
+	for _, e := range mmRequest.expectations {
+		if minimock.Equal(e.params, mmRequest.defaultExpectation.params) {
+			mmRequest.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmRequest.defaultExpectation.params)
+		}
+	}
+
+	return mmRequest
+}
+
+// Inspect accepts an inspector function that has same arguments as the MessageFetcher.Request
+func (mmRequest *mMessageFetcherMockRequest) Inspect(f func(callback tgbotapi.CallbackConfig)) *mMessageFetcherMockRequest {
+	if mmRequest.mock.inspectFuncRequest != nil {
+		mmRequest.mock.t.Fatalf("Inspect function is already set for MessageFetcherMock.Request")
+	}
+
+	mmRequest.mock.inspectFuncRequest = f
+
+	return mmRequest
+}
+
+// Return sets up results that will be returned by MessageFetcher.Request
+func (mmRequest *mMessageFetcherMockRequest) Return(err error) *MessageFetcherMock {
+	if mmRequest.mock.funcRequest != nil {
+		mmRequest.mock.t.Fatalf("MessageFetcherMock.Request mock is already set by Set")
+	}
+
+	if mmRequest.defaultExpectation == nil {
+		mmRequest.defaultExpectation = &MessageFetcherMockRequestExpectation{mock: mmRequest.mock}
+	}
+	mmRequest.defaultExpectation.results = &MessageFetcherMockRequestResults{err}
+	return mmRequest.mock
+}
+
+// Set uses given function f to mock the MessageFetcher.Request method
+func (mmRequest *mMessageFetcherMockRequest) Set(f func(callback tgbotapi.CallbackConfig) (err error)) *MessageFetcherMock {
+	if mmRequest.defaultExpectation != nil {
+		mmRequest.mock.t.Fatalf("Default expectation is already set for the MessageFetcher.Request method")
+	}
+
+	if len(mmRequest.expectations) > 0 {
+		mmRequest.mock.t.Fatalf("Some expectations are already set for the MessageFetcher.Request method")
+	}
+
+	mmRequest.mock.funcRequest = f
+	return mmRequest.mock
+}
+
+// When sets expectation for the MessageFetcher.Request which will trigger the result defined by the following
+// Then helper
+func (mmRequest *mMessageFetcherMockRequest) When(callback tgbotapi.CallbackConfig) *MessageFetcherMockRequestExpectation {
+	if mmRequest.mock.funcRequest != nil {
+		mmRequest.mock.t.Fatalf("MessageFetcherMock.Request mock is already set by Set")
+	}
+
+	expectation := &MessageFetcherMockRequestExpectation{
+		mock:   mmRequest.mock,
+		params: &MessageFetcherMockRequestParams{callback},
+	}
+	mmRequest.expectations = append(mmRequest.expectations, expectation)
+	return expectation
+}
+
+// Then sets up MessageFetcher.Request return parameters for the expectation previously defined by the When method
+func (e *MessageFetcherMockRequestExpectation) Then(err error) *MessageFetcherMock {
+	e.results = &MessageFetcherMockRequestResults{err}
+	return e.mock
+}
+
+// Request implements worker.MessageFetcher
+func (mmRequest *MessageFetcherMock) Request(callback tgbotapi.CallbackConfig) (err error) {
+	mm_atomic.AddUint64(&mmRequest.beforeRequestCounter, 1)
+	defer mm_atomic.AddUint64(&mmRequest.afterRequestCounter, 1)
+
+	if mmRequest.inspectFuncRequest != nil {
+		mmRequest.inspectFuncRequest(callback)
+	}
+
+	mm_params := MessageFetcherMockRequestParams{callback}
+
+	// Record call args
+	mmRequest.RequestMock.mutex.Lock()
+	mmRequest.RequestMock.callArgs = append(mmRequest.RequestMock.callArgs, &mm_params)
+	mmRequest.RequestMock.mutex.Unlock()
+
+	for _, e := range mmRequest.RequestMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.err
+		}
+	}
+
+	if mmRequest.RequestMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmRequest.RequestMock.defaultExpectation.Counter, 1)
+		mm_want := mmRequest.RequestMock.defaultExpectation.params
+		mm_got := MessageFetcherMockRequestParams{callback}
+		if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmRequest.t.Errorf("MessageFetcherMock.Request got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmRequest.RequestMock.defaultExpectation.results
+		if mm_results == nil {
+			mmRequest.t.Fatal("No results are set for the MessageFetcherMock.Request")
+		}
+		return (*mm_results).err
+	}
+	if mmRequest.funcRequest != nil {
+		return mmRequest.funcRequest(callback)
+	}
+	mmRequest.t.Fatalf("Unexpected call to MessageFetcherMock.Request. %v", callback)
+	return
+}
+
+// RequestAfterCounter returns a count of finished MessageFetcherMock.Request invocations
+func (mmRequest *MessageFetcherMock) RequestAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmRequest.afterRequestCounter)
+}
+
+// RequestBeforeCounter returns a count of MessageFetcherMock.Request invocations
+func (mmRequest *MessageFetcherMock) RequestBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmRequest.beforeRequestCounter)
+}
+
+// Calls returns a list of arguments used in each call to MessageFetcherMock.Request.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmRequest *mMessageFetcherMockRequest) Calls() []*MessageFetcherMockRequestParams {
+	mmRequest.mutex.RLock()
+
+	argCopy := make([]*MessageFetcherMockRequestParams, len(mmRequest.callArgs))
+	copy(argCopy, mmRequest.callArgs)
+
+	mmRequest.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockRequestDone returns true if the count of the Request invocations corresponds
+// the number of defined expectations
+func (m *MessageFetcherMock) MinimockRequestDone() bool {
+	for _, e := range m.RequestMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.RequestMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterRequestCounter) < 1 {
+		return false
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcRequest != nil && mm_atomic.LoadUint64(&m.afterRequestCounter) < 1 {
+		return false
+	}
+	return true
+}
+
+// MinimockRequestInspect logs each unmet expectation
+func (m *MessageFetcherMock) MinimockRequestInspect() {
+	for _, e := range m.RequestMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to MessageFetcherMock.Request with params: %#v", *e.params)
+		}
+	}
+
+	// if default expectation was set then invocations count should be greater than zero
+	if m.RequestMock.defaultExpectation != nil && mm_atomic.LoadUint64(&m.afterRequestCounter) < 1 {
+		if m.RequestMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to MessageFetcherMock.Request")
+		} else {
+			m.t.Errorf("Expected call to MessageFetcherMock.Request with params: %#v", *m.RequestMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcRequest != nil && mm_atomic.LoadUint64(&m.afterRequestCounter) < 1 {
+		m.t.Error("Expected call to MessageFetcherMock.Request")
+	}
 }
 
 type mMessageFetcherMockStart struct {
@@ -330,6 +554,8 @@ func (m *MessageFetcherMock) MinimockStopInspect() {
 func (m *MessageFetcherMock) MinimockFinish() {
 	m.finishOnce.Do(func() {
 		if !m.minimockDone() {
+			m.MinimockRequestInspect()
+
 			m.MinimockStartInspect()
 
 			m.MinimockStopInspect()
@@ -357,6 +583,7 @@ func (m *MessageFetcherMock) MinimockWait(timeout mm_time.Duration) {
 func (m *MessageFetcherMock) minimockDone() bool {
 	done := true
 	return done &&
+		m.MinimockRequestDone() &&
 		m.MinimockStartDone() &&
 		m.MinimockStopDone()
 }

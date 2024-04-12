@@ -26,7 +26,9 @@ precommit: format build test lint
 	echo "OK"
 
 generate: install-minimock
-	cd ${CURDIR}/internal/model/messages/ && ${MOCKBIN} -o ${CURDIR}/internal/mocks/messages/ -s "_mock.go"
+	cd ${CURDIR}/internal/model/messages/ && ${MOCKBIN} -o ${CURDIR}/internal/mocks/messages/ -s "_mock.go" && \
+		cd ${CURDIR}/internal/services/ && ${MOCKBIN} -o ${CURDIR}/internal/mocks/services/ -s "_mock.go" && \
+		cd ${CURDIR}/internal/worker/ && ${MOCKBIN} -o ${CURDIR}/internal/mocks/worker/ -s "_mock.go"
 
 install-minimock: bindir
 	test -f ${MOCKBIN} || \
