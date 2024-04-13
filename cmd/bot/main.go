@@ -27,31 +27,25 @@ func main() {
 		log.Fatal("config init failed:", err)
 	}
 
+	// DATABASE
+
 	db, err := gorm.Open(postgres.Open("host=localhost port=5432 user=postgres password=postgres"))
 	if err != nil {
 		log.Fatal("database init failed", err)
 	}
 
-	if err = db.Migrator().DropTable(&domain.Rate{}); err != nil {
+	if err = db.Migrator().DropTable(&domain.Rate{}, &domain.Expense{}, &domain.User{}); err != nil {
 		log.Fatal("drop table failed", err)
 	}
-	if err = db.AutoMigrate(&domain.Rate{}); err != nil {
+	if err = db.AutoMigrate(&domain.Rate{}, &domain.Expense{}, &domain.User{}); err != nil {
 		log.Fatal("migrate failed", err)
 	}
 
-	// DATABASE
-
-	userDB, err := database.NewUserDB()
-	if err != nil {
-		log.Fatal("database init failed", err)
-	}
+	userDB := database.NewUserDB(db)
 
 	rateDB := database.NewRateDB(db)
 
-	expenseDB, err := database.NewExpenseDB()
-	if err != nil {
-		log.Fatal("database init failed", err)
-	}
+	expenseDB := database.NewExpenseDB(db)
 
 	// GATEWAY
 

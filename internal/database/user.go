@@ -3,46 +3,39 @@ package database
 import (
 	"context"
 	"fmt"
-	"sync"
-
 	"github.com/Svoevolin/workshop_1_bot/internal/domain"
+	"gorm.io/gorm"
 )
 
 type UserDB struct {
-	sync.RWMutex
-	store map[int64]domain.User
+	db *gorm.DB
 }
 
-func NewUserDB() (*UserDB, error) {
-	return &UserDB{
-		store: make(map[int64]domain.User),
-	}, nil
+func NewUserDB(db *gorm.DB) *UserDB {
+	return &UserDB{db: db}
 }
 
 func (db *UserDB) UserExists(ctx context.Context, userID int64) bool {
-	db.RLock()
-	defer db.RUnlock()
+	var user domain.User
+	result := db.db.WithContext(ctx).Where(domain.User{UserID: userID}).Find(&user)
 
-	_, ok := db.store[userID]
-	return ok
+	return result.RowsAffected != 0
 }
 
 func (db *UserDB) GetDefaultCurrency(ctx context.Context, userID int64) (string, error) {
-	db.RLock()
-	defer db.RUnlock()
+	var user domain.User
+	result := db.db.WithContext(ctx).Where(domain.User{UserID: userID}).Find(&user)
 
-	if user, ok := db.store[userID]; ok {
-		return user.DefaultCurrency, nil
+	if result.RowsAffected == 0 {
+		return "", fmt.Errorf("user №%d not found", userID)
 	}
-
-	return "", fmt.Errorf("user №%d not found", userID)
+	return user.DefaultCurrency, nil
 }
 
 func (db *UserDB) ChangeDefaultCurrency(ctx context.Context, userID int64, currency string) error {
-	db.Lock()
-	defer db.Unlock()
-
-	db.store[userID] = domain.User{UserID: userID, DefaultCurrency: currency}
+	db.db.WithContext(ctx).Where(domain.User{UserID: userID}).Assign(domain.User{
+		DefaultCurrency: currency,
+	}).FirstOrCreate(&domain.User{})
 
 	return nil
 }
