@@ -41,7 +41,7 @@ func (worker *CurrencyExchangeRateWorker) Run(ctx context.Context) {
 					log.Println("stopped receiving exchange rates")
 					return
 				default:
-					if err := worker.updater.UpdateCurrency(ctx, time.Now()); err != nil {
+					if err := worker.updater.UpdateCurrency(ctx, time.Now().UTC()); err != nil {
 						log.Println(err)
 					}
 				}

@@ -1,15 +1,17 @@
 package domain
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type Rate struct {
-	ID        int
-	Code      string
+	Code      string `gorm:"primaryKey"`
 	Nominal   int64
 	Kopecks   int64
 	Original  string
-	Ts        time.Time
+	Date      time.Time `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt time.Time
+	DeletedAt sql.NullTime `gorm:"index"`
 }

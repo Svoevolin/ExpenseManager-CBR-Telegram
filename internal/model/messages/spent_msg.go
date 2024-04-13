@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	utils "github.com/Svoevolin/workshop_1_bot/internal/helpers/date"
 	"github.com/Svoevolin/workshop_1_bot/internal/helpers/money"
 )
 
@@ -49,13 +50,13 @@ func (s *Model) listExpenses(ctx context.Context, msg Message) (string, error) {
 	for _, v := range expenses {
 		if today.Sub(v.Date) < dur || interval == "всё время" {
 			if userSelectedCurrency != baseCurrency {
-				rate := s.rateDB.GetRate(ctx, userSelectedCurrency, v.Date)
+				rate := s.rateDB.GetRate(ctx, userSelectedCurrency, utils.GetDate(v.Date))
 
 				if rate == nil {
 					if err := s.rateUpdater.UpdateCurrency(ctx, v.Date); err != nil {
 						return "", err
 					}
-					rate = s.rateDB.GetRate(ctx, userSelectedCurrency, v.Date)
+					rate = s.rateDB.GetRate(ctx, userSelectedCurrency, utils.GetDate(v.Date))
 				}
 
 				v.Amount = int64(float64(v.Amount*rate.Nominal) / float64(rate.Kopecks) * 100)

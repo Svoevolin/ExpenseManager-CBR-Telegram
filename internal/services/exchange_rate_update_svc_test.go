@@ -41,8 +41,8 @@ func TestUpdateCurrency(t *testing.T) {
 		svc := NewExchangeRateUpdateSvc(gateway, storage, config)
 
 		config.SupportedCurrencyCodesMock.Expect().Return([]string{"RUB", "EUR"})
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "RUB", Original: "0", Ts: date}).Then(nil)
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "EUR", Original: "0", Ts: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "RUB", Original: "0", Date: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "EUR", Original: "0", Date: date}).Then(nil)
 
 		gateway.FetchRatesMock.Expect(minimock.AnyContext, date).
 			Return([]domain.Rate{{Code: "RUB", Original: "0"}, {Code: "USD", Original: "0"}, {Code: "EUR", Original: "0"}}, nil)
@@ -62,8 +62,8 @@ func TestUpdateCurrency(t *testing.T) {
 		svc := NewExchangeRateUpdateSvc(gateway, storage, config)
 
 		config.SupportedCurrencyCodesMock.Expect().Return([]string{"RUB", "USD", "EUR"})
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "RUB", Original: "0", Ts: date}).Then(nil)
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "EUR", Original: "0", Ts: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "RUB", Original: "0", Date: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "EUR", Original: "0", Date: date}).Then(nil)
 
 		gateway.FetchRatesMock.Expect(minimock.AnyContext, date).
 			Return([]domain.Rate{{Code: "RUB", Original: "0"}, {Code: "USD", Original: "Bad Value"}, {Code: "EUR", Original: "0"}}, nil)
@@ -83,9 +83,9 @@ func TestUpdateCurrency(t *testing.T) {
 		svc := NewExchangeRateUpdateSvc(gateway, storage, config)
 
 		config.SupportedCurrencyCodesMock.Expect().Return([]string{"RUB", "USD", "EUR"})
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "RUB", Original: "0", Ts: date}).Then(errors.New("save failed"))
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "USD", Original: "0", Ts: date}).Then(nil)
-		storage.AddRateMock.When(minimock.AnyContext, date, domain.Rate{Code: "EUR", Original: "0", Ts: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "RUB", Original: "0", Date: date}).Then(errors.New("save failed"))
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "USD", Original: "0", Date: date}).Then(nil)
+		storage.AddRateMock.When(minimock.AnyContext, domain.Rate{Code: "EUR", Original: "0", Date: date}).Then(nil)
 
 		gateway.FetchRatesMock.Expect(minimock.AnyContext, date).
 			Return([]domain.Rate{{Code: "RUB", Original: "0"}, {Code: "USD", Original: "0"}, {Code: "EUR", Original: "0"}}, nil)

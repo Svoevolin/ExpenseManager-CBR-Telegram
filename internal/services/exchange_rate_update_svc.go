@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Svoevolin/workshop_1_bot/internal/domain"
+	utils "github.com/Svoevolin/workshop_1_bot/internal/helpers/date"
 	"github.com/Svoevolin/workshop_1_bot/internal/helpers/money"
 )
 
@@ -14,7 +15,7 @@ type ExchangeRateFetcher interface {
 }
 
 type RateStorage interface {
-	AddRate(ctx context.Context, date time.Time, rate domain.Rate) error
+	AddRate(ctx context.Context, rate domain.Rate) error
 }
 
 type ConfigGetter interface {
@@ -57,9 +58,9 @@ func (svc *ExchangeRateUpdateSvc) UpdateCurrency(ctx context.Context, time time.
 			log.Println(err)
 			continue
 		}
-		rate.Ts = time
+		rate.Date = utils.GetDate(time)
 
-		err = svc.storage.AddRate(ctx, time, rate)
+		err = svc.storage.AddRate(ctx, rate)
 		if err != nil {
 			log.Println(err)
 		}

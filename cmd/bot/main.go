@@ -8,11 +8,14 @@ import (
 
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
 	"github.com/Svoevolin/workshop_1_bot/internal/database"
+	"github.com/Svoevolin/workshop_1_bot/internal/domain"
 	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/cbr_gateway"
 	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/tg_gateway"
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
 	"github.com/Svoevolin/workshop_1_bot/internal/services"
 	"github.com/Svoevolin/workshop_1_bot/internal/worker"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -24,6 +27,18 @@ func main() {
 		log.Fatal("config init failed:", err)
 	}
 
+	db, err := gorm.Open(postgres.Open("host=localhost port=5432 user=postgres password=postgres"))
+	if err != nil {
+		log.Fatal("database init failed", err)
+	}
+
+	if err = db.Migrator().DropTable(&domain.Rate{}); err != nil {
+		log.Fatal("drop table failed", err)
+	}
+	if err = db.AutoMigrate(&domain.Rate{}); err != nil {
+		log.Fatal("migrate failed", err)
+	}
+
 	// DATABASE
 
 	userDB, err := database.NewUserDB()
@@ -31,10 +46,7 @@ func main() {
 		log.Fatal("database init failed", err)
 	}
 
-	rateDB, err := database.NewRateDB()
-	if err != nil {
-		log.Fatal("database init failed", err)
-	}
+	rateDB := database.NewRateDB(db)
 
 	expenseDB, err := database.NewExpenseDB()
 	if err != nil {
