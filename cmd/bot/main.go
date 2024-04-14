@@ -8,7 +8,6 @@ import (
 
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
 	"github.com/Svoevolin/workshop_1_bot/internal/database"
-	"github.com/Svoevolin/workshop_1_bot/internal/domain"
 	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/cbr_gateway"
 	"github.com/Svoevolin/workshop_1_bot/internal/infrastructure/tg_gateway"
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
@@ -32,13 +31,6 @@ func main() {
 	db, err := gorm.Open(postgres.Open("host=localhost port=5432 user=postgres password=postgres"))
 	if err != nil {
 		log.Fatal("database init failed", err)
-	}
-
-	if err = db.Migrator().DropTable(&domain.Rate{}, &domain.Expense{}, &domain.User{}); err != nil {
-		log.Fatal("drop table failed", err)
-	}
-	if err = db.AutoMigrate(&domain.Rate{}, &domain.Expense{}, &domain.User{}); err != nil {
-		log.Fatal("migrate failed", err)
 	}
 
 	userDB := database.NewUserDB(db)

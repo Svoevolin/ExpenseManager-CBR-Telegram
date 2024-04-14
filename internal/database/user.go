@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+
 	"github.com/Svoevolin/workshop_1_bot/internal/domain"
 	"gorm.io/gorm"
 )
