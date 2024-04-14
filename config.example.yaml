@@ -3,8 +3,8 @@ token: abc
 currency_settings:
   base_currency: RUB
   supported_codes:
+    - RUB
     - USD
-    - CNY
     - EUR
-  frequency_exchange_rate_updates: 10
+  frequency_exchange_rate_updates: 100
   
