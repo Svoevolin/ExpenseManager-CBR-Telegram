@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"database/sql"
 	"time"
 )
 
@@ -13,5 +12,4 @@ type Rate struct {
 	Date      time.Time `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt sql.NullTime `gorm:"index"`
 }

@@ -10,7 +10,6 @@ create table  rates
     date       timestamp not null,
     created_at timestamp,
     updated_at timestamp,
-    deleted_at timestamp,
     primary key (code, date)
 );
 
@@ -19,13 +18,8 @@ create index rate_code_date on rates(code, date);
 create table users
 (
     user_id          bigint primary key,
-    default_currency text,
-    created_at       timestamp,
-    updated_at       timestamp,
-    deleted_at       timestamp
+    default_currency text
 );
-
-create index user_user_id on users(user_id);
 
 create table expenses
 (
@@ -33,10 +27,7 @@ create table expenses
     user_id    bigint,
     title      text,
     amount     bigint,
-    date       timestamp,
-    created_at timestamp,
-    updated_at timestamp,
-    deleted_at timestamp
+    date       timestamp
 );
 
 create index expenses_user_id on expenses(user_id);
@@ -50,7 +41,6 @@ create index expenses_user_id on expenses(user_id);
 drop index rate_code_date;
 drop table rates;
 
-drop index user_user_id;
 drop table users;
 
 drop index expenses_user_id;
