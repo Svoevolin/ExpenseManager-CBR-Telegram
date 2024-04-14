@@ -47,13 +47,13 @@ create index expenses_user_id on expenses(user_id);
 -- +goose Down
 -- +goose StatementBegin
 
-drop table rates;
 drop index rate_code_date;
+drop table rates;
 
-drop table users;
 drop index user_user_id;
+drop table users;
 
-drop table expenses;
 drop index expenses_user_id;
+drop table expenses;
 
 -- +goose StatementEnd
