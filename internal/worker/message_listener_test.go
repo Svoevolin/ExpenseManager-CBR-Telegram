@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,7 +42,9 @@ func TestMessageListenerWorkerRun(t *testing.T) {
 			}
 			close(chWithUpdates)
 		}(chWithUpdates)
-		worker.Run(ctx)
+		var any_wg sync.WaitGroup
+		any_wg.Add(1)
+		worker.Run(ctx, &any_wg)
 
 		assert.Error(t, ctx.Err())
 	})

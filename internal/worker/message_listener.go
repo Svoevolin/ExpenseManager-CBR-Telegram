@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/Svoevolin/workshop_1_bot/internal/model/messages"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -62,14 +63,19 @@ func (worker *MessageListenerWorker) processing(ctx context.Context, update tgbo
 	return nil
 }
 
-func (worker *MessageListenerWorker) Run(ctx context.Context) {
-	for update := range worker.fetcher.Start() {
+func (worker *MessageListenerWorker) Run(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	updatesCh := worker.fetcher.Start()
+	var update tgbotapi.Update
+
+	for {
 		select {
 		case <-ctx.Done():
 			worker.fetcher.Stop()
 			log.Println("stopped receiving new message from tg bot")
 			return
-		default:
+		case update = <-updatesCh:
 			if err := worker.processing(ctx, update); err != nil {
 				log.Println(err)
 			}

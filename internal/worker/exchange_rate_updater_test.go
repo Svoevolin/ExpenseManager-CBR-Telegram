@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,9 +34,13 @@ func TestCurrencyExchangeRateWorkerRun(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.TODO(), 140*time.Millisecond)
 		defer cancel()
-		worker.Run(ctx)
 
-		time.Sleep(160 * time.Millisecond)
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		worker.Run(ctx, &wg)
+		wg.Wait()
+
 		assert.Error(t, ctx.Err())
 		assert.EqualValues(t, i, 4)
 	})

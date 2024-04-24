@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 
 	"github.com/Svoevolin/workshop_1_bot/internal/config"
 	"github.com/Svoevolin/workshop_1_bot/internal/database"
@@ -60,6 +61,11 @@ func main() {
 	currencyExchangeRateWorker := worker.NewCurrencyExchangeRateWorker(exchangeRateUpdateSvc, config)
 	messageListenerWorker := worker.NewMessageListenerWorker(tgAPIgateaway, messageProcessor)
 
-	currencyExchangeRateWorker.Run(ctx)
-	messageListenerWorker.Run(ctx)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go currencyExchangeRateWorker.Run(ctx, &wg)
+	go messageListenerWorker.Run(ctx, &wg)
+
+	wg.Wait()
 }

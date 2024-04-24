@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -26,26 +27,24 @@ func NewCurrencyExchangeRateWorker(updater CurrencyChangeUpdater, config ConfigG
 	}
 }
 
-func (worker *CurrencyExchangeRateWorker) Run(ctx context.Context) {
+func (worker *CurrencyExchangeRateWorker) Run(ctx context.Context, wg *sync.WaitGroup) {
 	ticker := time.NewTicker(worker.config.FrequencyExchangeRateUpdates())
-
-	go func() {
-		for {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Printf("stopped receiving exchange rates")
+			return
+		case <-ticker.C:
 			select {
 			case <-ctx.Done():
-				log.Printf("stopped receiving exchange rates")
+				log.Println("stopped receiving exchange rates")
 				return
-			case <-ticker.C:
-				select {
-				case <-ctx.Done():
-					log.Println("stopped receiving exchange rates")
-					return
-				default:
-					if err := worker.updater.UpdateCurrency(ctx, time.Now().UTC()); err != nil {
-						log.Println(err)
-					}
+			default:
+				if err := worker.updater.UpdateCurrency(ctx, time.Now().UTC()); err != nil {
+					log.Println(err)
 				}
 			}
 		}
-	}()
+	}
 }
